@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat Extractor</title>
+</head>
+<body>
+  <h3>Paste Chat Link</h3>
+  <input id="link" style="width:400px" />
+  <button id="extract">Extract</button>
+
+  <pre id="status"></pre>
+
+  <script>
+    const EXTENSION_ID = "PASTE_YOUR_EXTENSION_ID";
+
+    document.getElementById("extract").onclick = async () => {
+      const chatUrl = document.getElementById("link").value;
+
+      document.getElementById("status").textContent = "Extracting...";
+
+      try {
+        const res = await chrome.runtime.sendMessage(
+          EXTENSION_ID,
+          {
+            type: "START_EXTRACTION",
+            chatUrl
+          }
+        );
+
+        if (res.status === "ERROR") {
+          document.getElementById("status").textContent = res.message;
+        } else {
+          document.getElementById("status").textContent =
+            JSON.stringify(res.data, null, 2);
+        }
+      } catch (err) {
+        document.getElementById("status").textContent =
+          "Extension not installed or permission denied.";
+      }
+    };
+  </script>
+</body>
+</html>
