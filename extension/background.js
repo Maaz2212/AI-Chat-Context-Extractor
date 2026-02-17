@@ -1,28 +1,51 @@
-chrome.runtime.onMessageExternal.addListener(
-  async (request, sender, sendResponse) => {
-    if (request.type !== "START_EXTRACTION") return;
+console.log("[BG] Background loaded");
 
-    const { chatUrl } = request;
+async function sendToBackend(payload) {
+  console.log("[BG] Sending to backend...");
 
-    const tabs = await chrome.tabs.query({});
-    const targetTab = tabs.find((t) => t.url === chatUrl);
+  const res = await fetch("http://localhost:8000/extract", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
 
-    if (!targetTab) {
-      sendResponse({
-        status: "ERROR",
-        message: "Tab not open. Please open the chat link."
+  console.log("[BG] Backend responded");
+  return await res.json();
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  console.log("[BG] Message:", msg);
+
+  if (msg.type !== "START_EXTRACTION") return;
+
+  (async () => {
+    try {
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true
       });
-      return;
+
+      console.log("[BG] Active tab:", tab.url);
+
+      const scrapeResult = await chrome.tabs.sendMessage(tab.id, {
+        type: "SCRAPE_CHAT"
+      });
+
+      if (!scrapeResult) {
+        throw new Error("No response from content script");
+      }
+
+      console.log("[BG] Scraped:", scrapeResult.messages.length);
+
+      const backendRes = await sendToBackend(scrapeResult);
+      console.log("[BG] Backend result:", backendRes);
+      sendResponse(backendRes);
+
+    } catch (err) {
+      console.error("[BG] Error:", err);
+      sendResponse({ status: "ERROR", message: err.message });
     }
+  })();
 
-    const response = await chrome.tabs.sendMessage(
-      targetTab.id,
-      { type: "SCRAPE_CHAT" }
-    );
-
-    sendResponse({
-      status: "SUCCESS",
-      data: response
-    });
-  }
-);
+  return true; // keeps channel open
+});
