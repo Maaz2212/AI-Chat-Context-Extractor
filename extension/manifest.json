@@ -2,15 +2,22 @@
   "manifest_version": 3,
   "name": "Chat Context Extractor",
   "version": "0.1",
+
+  "action": {
+    "default_popup": "popup.html"
+  },
+
   "permissions": ["tabs", "scripting"],
+  "host_permissions": ["https://chatgpt.com/*"],
+
   "background": {
     "service_worker": "background.js"
   },
+
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
+      "matches": ["https://chatgpt.com/*"],
+      "js": ["content.js"]
     }
   ]
 }

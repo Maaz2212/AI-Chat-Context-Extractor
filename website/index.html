@@ -11,33 +11,50 @@
   <pre id="status"></pre>
 
   <script>
-    const EXTENSION_ID = "PASTE_YOUR_EXTENSION_ID";
+  const EXTENSION_ID = "idfdncdbmpffahiapabgbmhbglagnbde";
 
-    document.getElementById("extract").onclick = async () => {
-      const chatUrl = document.getElementById("link").value;
+  async function checkExtension() {
+    try {
+      const res = await chrome.runtime.sendMessage(
+        EXTENSION_ID,
+        { type: "PING" }
+      );
 
-      document.getElementById("status").textContent = "Extracting...";
-
-      try {
-        const res = await chrome.runtime.sendMessage(
-          EXTENSION_ID,
-          {
-            type: "START_EXTRACTION",
-            chatUrl
-          }
-        );
-
-        if (res.status === "ERROR") {
-          document.getElementById("status").textContent = res.message;
-        } else {
-          document.getElementById("status").textContent =
-            JSON.stringify(res.data, null, 2);
-        }
-      } catch (err) {
+      if (res.status === "ALIVE") {
         document.getElementById("status").textContent =
-          "Extension not installed or permission denied.";
+          "✅ Extension detected. Ready to extract.";
+        return true;
       }
-    };
-  </script>
+    } catch (e) {}
+
+    document.getElementById("status").textContent =
+      "❌ Extension not installed. Please install it first.";
+    return false;
+  }
+
+  document.getElementById("extract").onclick = async () => {
+    const ready = await checkExtension();
+    if (!ready) return;
+
+    const chatUrl = document.getElementById("link").value;
+
+    document.getElementById("status").textContent = "Extracting...";
+
+    const res = await chrome.runtime.sendMessage(
+      EXTENSION_ID,
+      {
+        type: "START_EXTRACTION",
+        chatUrl
+      }
+    );
+
+    document.getElementById("status").textContent =
+      JSON.stringify(res, null, 2);
+  };
+
+  // Run check on page load
+  checkExtension();
+</script>
+
 </body>
 </html>
