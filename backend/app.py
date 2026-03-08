@@ -20,6 +20,7 @@ from processor import (
     textrank_summarize,      # Step 2: TextRank compressed summary
     build_document,          # Step 3a: Markdown document
     build_context_chunks,    # Step 3b: Context chunks for new AI chat
+    build_code_snapshot,     # Step 4: Code state snapshot for debugging
 )
 
 # ─── Storage ─────────────────────────────────────────────────────────────────
@@ -79,19 +80,24 @@ def extract(data: dict):
     # ── Step 3b: Context Chunks ──
     context = build_context_chunks(structured, summary)
 
-    # ── Save all 3 files ──
+    # ── Step 4: Code State Snapshot ──
+    code_state = build_code_snapshot(structured)
+
+    # ── Save all 4 files ──
     base = f"{timestamp}_{conv_id}"
     files = {
-        "json":     STORAGE_DIR / f"{base}_structured.json",
-        "document": STORAGE_DIR / f"{base}_document.md",
-        "context":  STORAGE_DIR / f"{base}_context.txt",
+        "json":       STORAGE_DIR / f"{base}_structured.json",
+        "document":   STORAGE_DIR / f"{base}_document.md",
+        "context":    STORAGE_DIR / f"{base}_context.txt",
+        "code_state": STORAGE_DIR / f"{base}_code_state.txt",
     }
 
     files["json"].write_text(json.dumps(structured, indent=2, ensure_ascii=False))
     files["document"].write_text(document)
     files["context"].write_text(context)
+    files["code_state"].write_text(code_state)
 
-    print(f"[SAVED] {base}_*.json/.md/.txt")
+    print(f"[SAVED] {base}_*.json/.md/.txt (4 files)")
 
     # ── Return response with download URLs ──
     return {
@@ -102,9 +108,10 @@ def extract(data: dict):
         "top_topics":    structured["top_topics"],
         "summary":       summary[:300],   # short preview in popup
         "downloads": {
-            "json":     f"/download/{files['json'].name}",
-            "document": f"/download/{files['document'].name}",
-            "context":  f"/download/{files['context'].name}",
+            "json":       f"/download/{files['json'].name}",
+            "document":   f"/download/{files['document'].name}",
+            "context":    f"/download/{files['context'].name}",
+            "code_state": f"/download/{files['code_state'].name}",
         }
     }
 
@@ -157,9 +164,10 @@ def list_conversations():
                 "message_count": d.get("message_count"),
                 "top_topics":    d.get("top_topics", [])[:5],
                 "downloads": {
-                    "json":     f"/download/{base}_structured.json",
-                    "document": f"/download/{base}_document.md",
-                    "context":  f"/download/{base}_context.txt",
+                    "json":       f"/download/{base}_structured.json",
+                    "document":   f"/download/{base}_document.md",
+                    "context":    f"/download/{base}_context.txt",
+                    "code_state": f"/download/{base}_code_state.txt",
                 }
             })
         except Exception:
