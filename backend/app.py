@@ -173,3 +173,50 @@ def list_conversations():
         except Exception:
             continue
     return result
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GET SINGLE CONVERSATION DETAILS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/conversation/{conv_id}")
+def get_conversation(conv_id: str):
+    """Get details for a specific conversation by ID."""
+    files = list(STORAGE_DIR.glob(f"*_{conv_id}_structured.json"))
+    if not files:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    f = files[0]
+    base = f.stem.replace("_structured", "")
+    
+    try:
+        d = json.loads(f.read_text())
+        
+        # Try to extract the summary from the markdown document if it exists
+        summary = "Summary not available."
+        md_file = STORAGE_DIR / f"{base}_document.md"
+        if md_file.exists():
+            content = md_file.read_text()
+            # Simple extraction: get text between "## 📋 Summary" and the next "---"
+            if "## 📋 Summary" in content:
+                parts = content.split("## 📋 Summary")
+                if len(parts) > 1:
+                    summary_section = parts[1].split("---")[0].strip()
+                    summary = summary_section
+
+        return {
+            "id":            d.get("id"),
+            "timestamp":     d.get("timestamp"),
+            "platform":      d.get("platform"),
+            "title":         d.get("title"),
+            "message_count": d.get("message_count"),
+            "top_topics":    d.get("top_topics", []),
+            "summary":       summary,
+            "downloads": {
+                "json":       f"/download/{base}_structured.json",
+                "document":   f"/download/{base}_document.md",
+                "context":    f"/download/{base}_context.txt",
+                "code_state": f"/download/{base}_code_state.txt",
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -2,16 +2,14 @@ const btn = document.getElementById("btn-extract");
 const status = document.getElementById("status");
 const result = document.getElementById("result");
 
-const BACKEND = "http://localhost:8000";
+const FRONTEND = "http://localhost:3000";
 
 // ── Restore last result when popup opens ──────────────────────────────────
-// Chrome closes the popup when you switch tabs. We save the last result
-// to chrome.storage.local so we can show it again when the popup reopens.
 chrome.storage.local.get("lastResult", ({ lastResult }) => {
   if (lastResult) {
-    showResult(lastResult);
-    status.textContent = "↩ Last extraction restored.";
+    status.textContent = "↩ Last extraction complete.";
     status.className = "ok";
+    showDashboardButton(lastResult.id);
   }
 });
 
@@ -21,8 +19,10 @@ btn.onclick = async () => {
   btn.textContent = "⏳ Extracting...";
   status.textContent = "Scrolling chat to load full history (~15s max)...";
   status.className = "";
-  result.style.display = "none";
-  document.getElementById("downloads").style.display = "none";
+
+  // hide old dashboard button if it exists
+  const oldDashBtn = document.getElementById("dash-btn");
+  if (oldDashBtn) oldDashBtn.style.display = "none";
 
   try {
     const res = await chrome.runtime.sendMessage({ type: "START_EXTRACTION" });
@@ -34,50 +34,41 @@ btn.onclick = async () => {
     // Save result so it survives tab switches
     chrome.storage.local.set({ lastResult: res });
 
-    showResult(res);
-    status.textContent = "✅ Done! Click a button below to download.";
+    status.textContent = "✅ Done! Redirecting to dashboard...";
     status.className = "ok";
+    btn.textContent = "Extract Saved!";
+
+    // Automatically open the new Dashboard tab!
+    const dashboardUrl = `${FRONTEND}/chat/${res.id}`;
+    chrome.tabs.create({ url: dashboardUrl });
+
+    showDashboardButton(res.id);
 
   } catch (err) {
     status.textContent = "❌ Error: " + err.message;
     status.className = "error";
+    btn.disabled = false;
+    btn.textContent = "⬆ Extract This Chat";
     console.error("[POPUP] Error:", err);
   }
-
-  btn.disabled = false;
-  btn.textContent = "⬆ Extract This Chat";
 };
 
 // ── Shared display function ──────────────────────────────────────────────
-function showResult(res) {
-  document.getElementById("r-platform").textContent = res.platform || "unknown";
-  document.getElementById("r-count").textContent = (res.message_count || "?") + " messages";
-
-  // Hide file row (not needed with download buttons)
-  const fileEl = document.getElementById("r-file");
-  if (fileEl) {
-    const row = fileEl.closest(".stat-row");
-    if (row) row.style.display = "none";
+function showDashboardButton(id) {
+  let dashBtn = document.getElementById("dash-btn");
+  if (!dashBtn) {
+    dashBtn = document.createElement("a");
+    dashBtn.id = "dash-btn";
+    dashBtn.className = "dl-btn";
+    dashBtn.style.textAlign = "center";
+    dashBtn.style.marginTop = "15px";
+    dashBtn.style.fontWeight = "bold";
+    dashBtn.style.borderColor = "#4ade80";
+    dashBtn.style.color = "#4ade80";
+    dashBtn.innerHTML = "🔗 Open Dashboard";
+    dashBtn.target = "_blank";
+    document.body.appendChild(dashBtn);
   }
-
-  // Topic tags
-  const topicsEl = document.getElementById("topics");
-  topicsEl.innerHTML = "";
-  (res.top_topics || []).slice(0, 8).forEach(topic => {
-    const tag = document.createElement("span");
-    tag.className = "tag";
-    tag.textContent = topic;
-    topicsEl.appendChild(tag);
-  });
-
-  // Download buttons
-  if (res.downloads) {
-    document.getElementById("dl-json").href = BACKEND + res.downloads.json;
-    document.getElementById("dl-doc").href = BACKEND + res.downloads.document;
-    document.getElementById("dl-context").href = BACKEND + res.downloads.context;
-    document.getElementById("dl-code").href = BACKEND + res.downloads.code_state;
-    document.getElementById("downloads").style.display = "flex";
-  }
-
-  result.style.display = "block";
+  dashBtn.href = `${FRONTEND}/chat/${id}`;
+  dashBtn.style.display = "block";
 }
