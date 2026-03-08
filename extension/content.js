@@ -12,21 +12,46 @@ function safeText(el) {
   return el?.innerText?.trim() || "";
 }
 
+/* ---------- PLATFORM DETECTION ---------- */
+function detectPlatform() {
+  const h = location.hostname;
+  if (h.includes("chatgpt.com") || h.includes("chat.openai.com")) return "chatgpt";
+  if (h.includes("claude.ai")) return "claude";
+  if (h.includes("gemini.google.com")) return "gemini";
+  if (h.includes("perplexity.ai")) return "perplexity";
+  if (h.includes("copilot.microsoft.com")) return "copilot";
+  return "unknown";
+}
+
 /* ---------- ROLE DETECTION (multi-platform) ---------- */
-function detectRole(node) {
+function detectRole(node, platform) {
+  // ChatGPT: has data-message-author-role attribute
   const roleAttr =
     node.getAttribute("data-message-author-role") ||
     node.getAttribute("data-author-role");
-
   if (roleAttr) return roleAttr;
 
-  // ChatGPT / Gemini hints
-  if (node.querySelector("[aria-label*='You said'], h5.sr-only"))
-    return "user";
+  // Claude: human turn vs assistant turn
+  if (platform === "claude") {
+    if (node.querySelector(".font-user-message, [data-is-streaming]")) return "user";
+    if (node.querySelector(".font-claude-message")) return "assistant";
+  }
+
+  // Gemini: user bubbles vs model response
+  if (platform === "gemini") {
+    if (node.closest("user-query, .user-query-container")) return "user";
+    if (node.closest("model-response, .model-response-container")) return "assistant";
+  }
+
+  // Perplexity
+  if (platform === "perplexity") {
+    if (node.querySelector(".whitespace-pre-line")) return "user";
+    if (node.querySelector(".prose")) return "assistant";
+  }
 
   // heuristic fallback
+  if (node.querySelector("[aria-label*='You said'], h5.sr-only")) return "user";
   const txt = safeText(node).toLowerCase();
-
   if (txt.startsWith("you said")) return "user";
   if (txt.startsWith("assistant")) return "assistant";
 
@@ -73,10 +98,18 @@ async function scrollToTop() {
 
   let stable = 0;
   let lastHeight = 0;
+  const MAX_WAIT_MS = 15000;  // never wait more than 15 seconds total
+  const startTime = Date.now();
 
   while (stable < 3) {
+    // ── Bail out if we've been scrolling too long ──
+    if (Date.now() - startTime > MAX_WAIT_MS) {
+      console.warn("[CONTENT] Scroll timeout — extracting what's visible");
+      break;
+    }
+
     window.scrollTo(0, 0);
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 800));
 
     const h = document.body.scrollHeight;
 
@@ -94,19 +127,31 @@ async function scrollToTop() {
    MESSAGE NODE DISCOVERY (multi-platform)
 ======================================================= */
 
-function findMessageNodes() {
+function findMessageNodes(platform) {
 
-  // ChatGPT / Claude / Gemini / Perplexity common patterns
-  let nodes = document.querySelectorAll(
-    "[data-message-author-role], article, [role='listitem']"
-  );
+  // Platform-specific selectors (highest accuracy)
+  const platformSelectors = {
+    chatgpt: "[data-message-author-role]",
+    claude: ".font-user-message, .font-claude-message, [data-testid*='message']",
+    gemini: "user-query, model-response, .conversation-container .turn",
+    perplexity: "[data-testid='search-answer-item'], .message-bubble, .prose-container",
+    copilot: "[class*='ChatTurn'], [data-testid*='message']",
+  };
 
+  const selector = platformSelectors[platform];
+  if (selector) {
+    const nodes = document.querySelectorAll(selector);
+    if (nodes.length > 0) return [...nodes];
+  }
+
+  // Generic fallback: article tags and role=listitem
+  let nodes = document.querySelectorAll("article, [role='listitem']");
   if (nodes.length > 0) return [...nodes];
 
-  // fallback heuristic
+  // Last-resort heuristic: large divs
   return [...document.querySelectorAll("div")]
     .filter(el => safeText(el).length > 100)
-    .slice(-80); // avoid grabbing whole page
+    .slice(-80);
 }
 
 /* =======================================================
@@ -115,7 +160,8 @@ function findMessageNodes() {
 
 function scrapeConversation() {
 
-  const nodes = findMessageNodes();
+  const platform = detectPlatform();
+  const nodes = findMessageNodes(platform);
   const messages = [];
 
   nodes.forEach((node, i) => {
@@ -129,7 +175,7 @@ function scrapeConversation() {
     messages.push({
       index: i,
 
-      role: detectRole(node),
+      role: detectRole(node, platform),
 
       raw_text: rawText,
       text_blocks: textBlocks,

@@ -1,0 +1,141 @@
+{
+  "id": "b6798811",
+  "platform": "claude.ai",
+  "url": "https://claude.ai/chat/14a12225-fc6c-4681-a8b6-289dbfd26cd3",
+  "title": "Producer consumer algorithm using fork() in C++ - Claude",
+  "timestamp": "20260308_202203",
+  "message_count": 4,
+  "top_topics": [
+    "fork",
+    "karke",
+    "producer",
+    "consumer",
+    "algorithm",
+    "run",
+    "kar",
+    "dikhani",
+    "jisme",
+    "new"
+  ],
+  "messages": [
+    {
+      "role": "unknown",
+      "text": "Producer Consumer algorithm run kar ke dikhani h\njisme new processes fork() function use karke create karna h\nlab me hi karke dikhana h linux \ngive me in c++",
+      "char_length": 157,
+      "has_code": false,
+      "code_blocks": [],
+      "keywords": [
+        "karke",
+        "producer",
+        "consumer",
+        "algorithm",
+        "run"
+      ],
+      "keyword_scores": [
+        {
+          "word": "karke",
+          "score": 0.17823
+        },
+        {
+          "word": "producer",
+          "score": 0.08911
+        },
+        {
+          "word": "consumer",
+          "score": 0.08911
+        },
+        {
+          "word": "algorithm",
+          "score": 0.08911
+        },
+        {
+          "word": "run",
+          "score": 0.08911
+        }
+      ]
+    },
+    {
+      "role": "unknown",
+      "text": "Can you short it if it is possible means without any error or logic works",
+      "char_length": 73,
+      "has_code": false,
+      "code_blocks": [],
+      "keywords": [
+        "short",
+        "possible",
+        "means",
+        "without",
+        "error"
+      ],
+      "keyword_scores": [
+        {
+          "word": "short",
+          "score": 0.24188
+        },
+        {
+          "word": "possible",
+          "score": 0.24188
+        },
+        {
+          "word": "means",
+          "score": 0.24188
+        },
+        {
+          "word": "without",
+          "score": 0.24188
+        },
+        {
+          "word": "error",
+          "score": 0.24188
+        }
+      ]
+    },
+    {
+      "role": "unknown",
+      "text": "Explain this code",
+      "char_length": 17,
+      "has_code": false,
+      "code_blocks": [],
+      "keywords": [
+        "explain",
+        "code"
+      ],
+      "keyword_scores": [
+        {
+          "word": "explain",
+          "score": 0.84657
+        },
+        {
+          "word": "code",
+          "score": 0.84657
+        }
+      ]
+    },
+    {
+      "role": "unknown",
+      "text": "Where we are using fork for creating and can we use fork greater than 0",
+      "char_length": 71,
+      "has_code": false,
+      "code_blocks": [],
+      "keywords": [
+        "fork",
+        "creating",
+        "greater"
+      ],
+      "keyword_scores": [
+        {
+          "word": "fork",
+          "score": 0.64384
+        },
+        {
+          "word": "creating",
+          "score": 0.42329
+        },
+        {
+          "word": "greater",
+          "score": 0.42329
+        }
+      ]
+    }
+  ]
+}

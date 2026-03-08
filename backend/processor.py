@@ -573,3 +573,106 @@ def build_context_chunks(structured_data: dict, summary: str) -> str:
 
     return "\n".join(lines)
 
+
+# ─────────────────────────────────────────────────────────
+# STEP 4:  CODE STATE SNAPSHOT  (Debugging Context)
+# ─────────────────────────────────────────────────────────
+
+def build_code_snapshot(structured_data: dict) -> str:
+    """
+    Build a snapshot optimized for transferring broken code debugging sessions.
+    Format: Original Goal -> Current State (Latest Code Only) -> Failed Attempts -> Current Error.
+    """
+    messages = structured_data.get("messages", [])
+    if len(messages) < 2:
+        return "Not enough messages for a code snapshot."
+
+    # 1. Original Goal (First User Message)
+    original_goal = ""
+    for msg in messages:
+        if msg.get("role") == "user":
+            original_goal = msg.get("text", "")
+            break
+
+    # 2. Current Error (Last User Message)
+    current_error = ""
+    for msg in reversed(messages):
+        if msg.get("role") == "user":
+            current_error = msg.get("text", "")
+            break
+
+    # 3. Current Code State (Last Assistant Message with Code)
+    latest_code_blocks = []
+    for msg in reversed(messages):
+        if msg.get("role") == "assistant" and msg.get("has_code"):
+            latest_code_blocks = msg.get("code_blocks", [])
+            break
+
+    # 4. What We Already Tried (Middle Messages Summarized via TextRank)
+    # We take all assistant messages (excluding the last one holding the code),
+    # strip out any code content, and summarize the English explanations.
+    middle_texts = []
+    found_last_code_msg = False
+
+    for msg in reversed(messages):
+        if msg.get("role") == "assistant":
+            if msg.get("has_code") and not found_last_code_msg:
+                # Skip the message that gave us the latest_code_blocks
+                found_last_code_msg = True
+                continue
+            
+            # For older assistant messages, take ONLY the text (ignore the broken code blocks)
+            # which usually contains the "Try doing X" or "I added Y" explanation.
+            text = msg.get("text", "")
+            if len(text) > 50:
+                middle_texts.insert(0, text) # Insert at front to maintain chronological order
+
+    # Run TextRank on these middle explanations
+    failed_attempts_summary = "No failed attempts detected."
+    if middle_texts:
+        # Create a dummy structured dict just for TextRank wrapper
+        dummy_data = {"messages": [{"role": "assistant", "text": t} for t in middle_texts]}
+        failed_attempts_summary = textrank_summarize(dummy_data, max_sentences=5)
+
+    # ── Formatting the Output ──
+    lines = [
+        f"════════════════════════════════════════",
+        f"CODE DEBUGGING CONTEXT (auto-generated)",
+        f"════════════════════════════════════════",
+        f"",
+        f"# THE ORIGINAL GOAL",
+        f"{original_goal}",
+        f"",
+        f"---",
+        f"",
+        f"# CURRENT CODE STATE",
+        f"These are the most recent versions of the files we are working on.",
+        f"",
+    ]
+
+    if not latest_code_blocks:
+        lines.append("*No code blocks found in recent assistant messages.*")
+    else:
+        for block in latest_code_blocks:
+            lines.append(f"```\n{block}\n```\n")
+
+    lines += [
+        f"---",
+        f"",
+        f"# WHAT WE ALREADY TRIED (Failed Attempts)",
+        f"Please DO NOT suggest the following approaches, as we already tried them and they failed:",
+        f"",
+        f"{failed_attempts_summary}",
+        f"",
+        f"---",
+        f"",
+        f"# THE CURRENT ERROR / ISSUE",
+        f"This is the latest problem I am facing with the current code state above:",
+        f"",
+        f"{current_error}",
+        f"",
+        f"════════════════════════════════════════",
+        f"Please analyze the CURRENT CODE STATE and the CURRENT ERROR to provide a new fix.",
+    ]
+
+    return "\n".join(lines)

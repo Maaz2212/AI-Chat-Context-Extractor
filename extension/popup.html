@@ -1,7 +1,186 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Chat Context Extractor</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f0f10;
+      color: #e8e8e8;
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #a0a0b0;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    #btn-extract {
+      width: 100%;
+      padding: 10px;
+      background: #4f6ef7;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #btn-extract:hover {
+      background: #3b57d4;
+    }
+
+    #btn-extract:disabled {
+      background: #333;
+      color: #666;
+      cursor: default;
+    }
+
+    #status {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #888;
+      min-height: 18px;
+    }
+
+    #status.error {
+      color: #f87171;
+    }
+
+    #status.ok {
+      color: #4ade80;
+    }
+
+    #result {
+      display: none;
+      margin-top: 14px;
+      background: #1a1a22;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid #2a2a36;
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      color: #888;
+    }
+
+    .stat-val {
+      color: #e8e8e8;
+      font-weight: 600;
+    }
+
+    #topics {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .tag {
+      background: #2a2a40;
+      border: 1px solid #4f6ef7;
+      color: #9db0ff;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 11px;
+    }
+
+    #downloads {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .dl-btn {
+      display: block;
+      width: 100%;
+      padding: 7px 10px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #1a1a22;
+      color: #ccc;
+      font-size: 12px;
+      text-decoration: none;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .dl-btn:hover {
+      background: #2a2a38;
+      border-color: #4f6ef7;
+      color: #fff;
+    }
+
+    .dl-btn span {
+      font-size: 15px;
+      margin-right: 6px;
+    }
+
+    #saved-note {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #4ade80;
+    }
+  </style>
+</head>
+
 <body>
-  <button id="extract">Extract Chat</button>
+  <h1>Chat Context Extractor</h1>
+  <button id="btn-extract">⬆ Extract This Chat</button>
+  <div id="status">Ready — open a chat and click above</div>
+
+  <div id="result">
+    <div class="stat-row">
+      <span class="stat-label">Platform</span>
+      <span class="stat-val" id="r-platform">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Messages</span>
+      <span class="stat-val" id="r-count">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Saved as</span>
+      <span class="stat-val" id="r-file" style="font-size:10px; word-break:break-all;">—</span>
+    </div>
+    <div id="topics"></div>
+    <div id="downloads" style="display:none">
+      <a class="dl-btn" id="dl-json" href="#" target="_blank"><span>📄</span>Download JSON</a>
+      <a class="dl-btn" id="dl-doc" href="#" target="_blank"><span>📝</span>Download Document (.md)</a>
+      <a class="dl-btn" id="dl-context" href="#" target="_blank"><span>🔗</span>Download Context (AI prompt)</a>
+      <a class="dl-btn" id="dl-code" href="#" target="_blank" style="border-color:#4f6ef7;"><span>💻</span>Download Code
+        Snapshot</a>
+    </div>
+  </div>
+
   <script src="popup.js"></script>
 </body>
+
 </html>
