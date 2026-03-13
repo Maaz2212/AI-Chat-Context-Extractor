@@ -1,5 +1,5 @@
 """
-processor.py — Custom NLP Engine (built from scratch, no AI APIs)
+processor.py — Custom NLP Engine
 
 STEP 1: TF-IDF Keyword Extraction + Structured JSON
 =====================================================
@@ -58,7 +58,7 @@ def tokenize(text: str) -> list[str]:
 
 
 # ─────────────────────────────────────────────────────────
-# STEP 1A:  TF-IDF VECTORIZER  (built from scratch)
+# STEP 1A:  TF-IDF VECTORIZER 
 # ─────────────────────────────────────────────────────────
 
 class TFIDFVectorizer:

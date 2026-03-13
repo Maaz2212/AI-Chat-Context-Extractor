@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Chat Extractor Dashboard",
   description: "Manage your extracted AI chats",
+  icons: {
+    icon: "/logo.svg",
+  },
 };
 
 // Next.js Server Component to fetch the sidebar list
